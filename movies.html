@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://kit.fontawesome.com/5a9af39ff6.js" crossorigin="anonymous"></script>
+  <title>الأفلام</title>
+  <style>
+body {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+    }
+
+    #header {
+      position: fixed;
+      top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #a3070e;
+      color: white;
+      padding: 0;
+      text-align: center;
+      font-size: 24px;
+      width: 100%;
+      height: 40px;
+      border-bottom: 2px solid #282626;
+    }
+
+    #header .search {
+      margin: 0;
+      padding: 0;
+      position: fixed;
+      top: 7px;
+      right: 8px;
+    }
+
+    #headerTitle {
+      margin: 5px;
+    }
+    .button {
+      background-color: #a3070e;
+      color: white;
+      padding: 15px;
+      margin: 10px;
+      border-radius: 5px;
+      text-align: center;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .button:hover {
+      background-color: #00796b;
+    }
+    #backToMain {
+      position: absolute;
+      top: 0;
+      left: 10px;
+      background-color: transparent;
+      color: white;
+      border: none;
+      padding: 0;
+      font-size: 35px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="header">
+    <button id="backToMain" onclick="goToMain()"><i class="fa-solid fa-arrow-left"></i></button>
+    <div class="search"><i class="fa-solid fa-magnifying-glass"></i></div>
+    <span id="headerTitle">الافلام</span>
+  </div>
+  <div id="moviesList"></div>
+
+  <script>
+    const API_URL = 'http://swnord.online:2052';
+    const USERNAME = '2397908905';
+    const PASSWORD = '00764816';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadMovies();
+    });
+
+    async function fetchData(endpoint) {
+      try {
+        const response = await fetch(`${API_URL}/player_api.php?username=${USERNAME}&password=${PASSWORD}&action=${endpoint}`);
+        return await response.json();
+      } catch (error) {
+        alert("فشل في تحميل البيانات");
+        console.error(error);
+      }
+    }
+
+    async function loadMovies() {
+      const movies = await fetchData('get_vod_categories');
+      const moviesList = document.getElementById('moviesList');
+      moviesList.innerHTML = '';
+      movies
+        .filter(movie => movie.category_name.includes('أفلام'))
+        .forEach(movie => {
+          const button = document.createElement('div');
+          button.className = 'button';
+          button.innerText = movie.category_name;
+          button.onclick = () => window.location.href = `movies_details.html?category_id=${movie.category_id}&category_name=${encodeURIComponent(movie.category_name)}`;
+          moviesList.appendChild(button);
+        });
+    }
+    function goToMain() {
+      window.location.href = 'index.html';
+    }
+  </script>
+
+</body>
+</html>

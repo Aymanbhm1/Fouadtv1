@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مشغل IPTV - القنوات</title>
+  <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
+  <script src="https://kit.fontawesome.com/5a9af39ff6.js" crossorigin="anonymous"></script>
+  <style>
+    body {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+    }
+
+    #header {
+      position: fixed;
+      top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #a3070e;
+      color: white;
+      padding: 0;
+      text-align: center;
+      font-size: 24px;
+      width: 100%;
+      height: 40px;
+      border-bottom: 2px solid #282626;
+    }
+
+    #header .search {
+      margin: 0;
+      padding: 0;
+      position: fixed;
+      top: 7px;
+      right: 8px;
+    }
+
+    #headerTitle {
+      margin: 5px;
+    }
+
+    #channelList {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      margin-top: 55px;
+    }
+
+    .channel {
+      background-color: #a3070e;
+      border: 2px solid #205a6b;
+      color: #fff;
+      width: 120px;
+      height: 180px;
+      margin: 5px;
+      border-radius: 15px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-shadow: 0 4px 8px #205a6b;
+      transition: transform 0.3s;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .channel img {
+      margin: 5px;
+      padding: 5px 0;
+      width: 90%;
+      height: 70px;
+      border-radius: 10px;
+    }
+
+    .channel div {
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    #videoContainer {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #111;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+    }
+
+    #closeBtn {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 10px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    #backToMain {
+      position: absolute;
+      top: 0;
+      left: 10px;
+      background-color: transparent;
+      color: white;
+      border: none;
+      padding: 0;
+      font-size: 35px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="header">
+    <button id="backToMain" onclick="goToMain()"><i class="fa-solid fa-arrow-left"></i></button>
+    <div class="search"><i class="fa-solid fa-magnifying-glass"></i></div>
+    <span id="headerTitle">القنوات</span>
+  </div>
+  
+  <div id="content">
+    <div id="channelList"></div>
+  </div>
+
+  <div id="videoContainer">
+    <button id="closeBtn" onclick="closePlayer()">إغلاق</button>
+    <video id="videoPlayer" class="video-js vjs-default-skin" controls autoplay></video>
+  </div>
+
+  <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
+  <script>
+    const API_URL = 'http://swnord.online:2052';
+    const USERNAME = '2397908905';
+    const PASSWORD = '00764816';
+    const DEFAULT_IMAGE = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjxlegowTV89qwUU7M4lVGBnIimwC_NZNRPnOXiO5-NC4uwRGL-iRM-83pH3w38eSASAbtgllAJ6sRp9dc860OCI0eElbhp2poE1tBafj00AloDlXUxDWOHdC96naxNnoowvcyiVUxhxsaIzPVPlwCEr33OZ5IaGgl_gFlnZRxX6Af3bSXCDqwVtkzgN4c/s320/S5.png'; // الصورة الافتراضية
+    let player;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      player = videojs('videoPlayer');
+      loadChannels();
+    });
+
+    function getQueryParam(param) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(param);
+    }
+
+    async function fetchData(endpoint) {
+      try {
+        const response = await fetch(`${API_URL}/player_api.php?username=${USERNAME}&password=${PASSWORD}&action=${endpoint}`);
+        return await response.json();
+      } catch (error) {
+        alert("فشل في تحميل البيانات");
+        console.error(error);
+      }
+    }
+
+    async function loadChannels() {
+      const categoryId = getQueryParam('category_id');
+      const categoryName = getQueryParam('category_name');
+      document.getElementById('headerTitle').innerText = decodeURIComponent(categoryName);
+      const channels = await fetchData(`get_live_streams&category_id=${categoryId}`);
+      const channelList = document.getElementById('channelList');
+      channelList.innerHTML = '';
+      
+      channels.forEach(channel => {
+        const channelDiv = document.createElement('div');
+        channelDiv.className = 'channel';
+
+        const img = document.createElement('img');
+        img.src = channel.stream_icon || DEFAULT_IMAGE;
+        img.alt = channel.name;
+
+        img.onerror = () => {
+          img.src = DEFAULT_IMAGE;
+        };
+
+        const nameDiv = document.createElement('div');
+        nameDiv.innerText = channel.name;
+
+        channelDiv.appendChild(img);
+        channelDiv.appendChild(nameDiv);
+        channelDiv.onclick = () => playChannel(`${API_URL}/live/${USERNAME}/${PASSWORD}/${channel.stream_id}.m3u8`);
+
+        channelList.appendChild(channelDiv);
+      });
+    }
+
+    function playChannel(streamUrl) {
+      player.src({ src: streamUrl, type: 'application/x-mpegURL' });
+      player.play();
+      document.getElementById('videoContainer').style.display = 'flex';
+    }
+
+    function closePlayer() {
+      player.pause();
+      player.reset();
+      document.getElementById('videoContainer').style.display = 'none';
+    }
+
+    function goToMain() {
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>
